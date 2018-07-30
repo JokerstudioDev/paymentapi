@@ -5,8 +5,9 @@ import (
 )
 
 type History struct {
-	ID          int
-	Date        time.Time
-	Description string
-	Success     bool
+	ID            int
+	AccountNumber string
+	Date          time.Time
+	Description   string
+	Success       bool
 }
