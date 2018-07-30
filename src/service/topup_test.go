@@ -1,9 +1,12 @@
 package service
 
-import "testing"
+import (
+	"dto"
+	"testing"
+)
 
 func Test_Topup_Input_AccountNumberDestination_8976789543_Amount_5000_Should_Be_Ployploy_BalanceOld_15000_CurrentBalance_10000_Amount_5000(t *testing.T) {
-	expected := TopupResponse{
+	expected := dto.TopupResponse{
 		AccountName:    "Ployploy",
 		BalanceOld:     15000.00,
 		CurrentBalance: 10000.00,
