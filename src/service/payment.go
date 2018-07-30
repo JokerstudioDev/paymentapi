@@ -46,3 +46,39 @@ func (*PaymentSvc) Topup(accountNumber string, amount float64) dto.TopupResponse
 		Topup:          amount,
 	}
 }
+
+func (*PaymentSvc) Withdraw(accountNumber string, amount float64) dto.WithdrawResponse {
+	account := accountDac.ReadById(accountNumber)
+	balance := account.Balance - amount
+	if balance < 100.00 {
+		historyDac.AddHistory(model.History{
+			AccountNumber: account.AccountNumber,
+			Date:          time.Now(),
+			Description:   fmt.Sprintf("Withdraw %f Bath fail because remaining balance less than 100.00", amount),
+		})
+		return dto.WithdrawResponse{}
+	}
+
+	transactionResult := accountDac.UpdateBalance(accountNumber, balance)
+
+	if transactionResult == false {
+		historyDac.AddHistory(model.History{
+			AccountNumber: account.AccountNumber,
+			Date:          time.Now(),
+			Description:   fmt.Sprintf("Withdraw %f Bath fail", amount),
+		})
+		return dto.WithdrawResponse{}
+	}
+
+	historyDac.AddHistory(model.History{
+		AccountNumber: account.AccountNumber,
+		Date:          time.Now(),
+		Description:   fmt.Sprintf("Withdraw %f Bath success", amount),
+	})
+	return dto.WithdrawResponse{
+		AccountName:    account.AccountName,
+		BalanceOld:     account.Balance,
+		CurrentBalance: balance,
+		WithdrawAmount: amount,
+	}
+}
