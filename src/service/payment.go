@@ -82,3 +82,47 @@ func (*PaymentSvc) Withdraw(accountNumber string, amount float64) dto.WithdrawRe
 		WithdrawAmount: amount,
 	}
 }
+
+func (*PaymentSvc) Transfer(accountNumberStart, accountNumberDes string, amount float64) dto.TransferResponse {
+	account := accountDac.ReadById(accountNumberStart)
+	balance := account.Balance - amount
+
+	if amount > 5000.00 {
+		amount = amount + 25.00
+		balance := account.Balance - amount
+		historyDac.AddHistory(model.History{
+			AccountNumber: account.AccountNumber,
+			Date:          time.Now(),
+			Description:   fmt.Sprintf("Transfer %f Bath and calculate fee 25.00 bath", amount),
+		})
+		return dto.TransferResponse{
+			AccountName:    account.AccountName,
+			BalanceOld:     account.Balance,
+			CurrentBalance: balance,
+			TransferAmount: amount,
+		}
+	}
+
+	transactionResult := accountDac.UpdateBalance(accountNumberStart, balance)
+
+	if transactionResult == false {
+		historyDac.AddHistory(model.History{
+			AccountNumber: account.AccountNumber,
+			Date:          time.Now(),
+			Description:   fmt.Sprintf("Transfer %f Bath fail", amount),
+		})
+		return dto.TransferResponse{}
+	}
+
+	historyDac.AddHistory(model.History{
+		AccountNumber: account.AccountNumber,
+		Date:          time.Now(),
+		Description:   fmt.Sprintf("Transfer %f Bath success", amount),
+	})
+	return dto.TransferResponse{
+		AccountName:    account.AccountName,
+		BalanceOld:     account.Balance,
+		CurrentBalance: balance,
+		TransferAmount: amount,
+	}
+}
