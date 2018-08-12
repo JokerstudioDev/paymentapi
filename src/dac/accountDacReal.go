@@ -8,17 +8,16 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type AccountDac struct{}
-
-var connString string
-
-func NewAccountDac(conn string) *AccountDac {
-	connString = conn
-	return &AccountDac{}
+type AccountDac struct {
+	ConnString string
 }
 
-func openDB() *sql.DB {
-	db, err := sql.Open("mysql", connString)
+func NewAccountDac(conn string) *AccountDac {
+	return &AccountDac{ConnString: conn}
+}
+
+func openDB(conn string) *sql.DB {
+	db, err := sql.Open("mysql", conn)
 	if err != nil {
 		fmt.Println("connection fails")
 		panic(err)
@@ -27,8 +26,8 @@ func openDB() *sql.DB {
 	return db
 }
 
-func (*AccountDac) UpdateBalance(accountNumber string, balance float64) bool {
-	db := openDB()
+func (accountDac *AccountDac) UpdateBalance(accountNumber string, balance float64) bool {
+	db := openDB(accountDac.ConnString)
 	defer db.Close()
 	statement, _ := db.Prepare("UPDATE `account` SET balance= ? WHERE account_number=?")
 	defer statement.Close()
@@ -39,8 +38,8 @@ func (*AccountDac) UpdateBalance(accountNumber string, balance float64) bool {
 	return true
 }
 
-func (*AccountDac) ReadById(accountNumber string) model.Account {
-	db := openDB()
+func (accountDac *AccountDac) ReadById(accountNumber string) model.Account {
+	db := openDB(accountDac.ConnString)
 	defer db.Close()
 	results, _ := db.Query("SELECT * FROM account WHERE account_number=?", accountNumber)
 	var account model.Account
