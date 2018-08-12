@@ -42,4 +42,11 @@ func Test_Transfer_By_CalFee(t *testing.T) {
 		t.Errorf("expected %v but got %v", expected, accualResult)
 	}
 
+	if accountDac.ReadByIDCount != 2 {
+		t.Errorf("Unexpected %d", accountDac.ReadByIDCount)
+	}
+
+	if accountDac.UpdateBalanceCount != 2 {
+		t.Errorf("Unexpected %d", accountDac.UpdateBalanceCount)
+	}
 }
