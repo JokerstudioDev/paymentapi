@@ -85,27 +85,40 @@ func (*PaymentSvc) Withdraw(accountNumber string, amount float64) dto.WithdrawRe
 
 func (*PaymentSvc) Transfer(accountNumberStart, accountNumberDes string, amount float64) dto.TransferResponse {
 	account := accountDac.ReadById(accountNumberStart)
-	balance := account.Balance - amount
+	balance := account.Balance
+	amountSource := amount
 
 	if amount > 5000.00 {
-		amount = amount + 25.00
-		balance := account.Balance - amount
+		amountSource = amount + 25.00
+		balance = account.Balance - amountSource
 		historyDac.AddHistory(model.History{
 			AccountNumber: account.AccountNumber,
 			Date:          time.Now(),
 			Description:   fmt.Sprintf("Transfer %f Bath and calculate fee 25.00 bath", amount),
 		})
-		return dto.TransferResponse{
-			AccountName:    account.AccountName,
-			BalanceOld:     account.Balance,
-			CurrentBalance: balance,
-			TransferAmount: amount,
-		}
+	} else {
+		historyDac.AddHistory(model.History{
+			AccountNumber: account.AccountNumber,
+			Date:          time.Now(),
+			Description:   fmt.Sprintf("Transfer %f Bath ", amount),
+		})
 	}
 
 	transactionResult := accountDac.UpdateBalance(accountNumberStart, balance)
-
 	if transactionResult == false {
+		historyDac.AddHistory(model.History{
+			AccountNumber: account.AccountNumber,
+			Date:          time.Now(),
+			Description:   fmt.Sprintf("Transfer %f Bath fail", amount),
+		})
+		return dto.TransferResponse{}
+	}
+
+	accountDes := accountDac.ReadById(accountNumberDes)
+	balanceDes := account.Balance + amount
+	transactionResultDes := accountDac.UpdateBalance(accountDes.AccountNumber, balanceDes)
+
+	if transactionResultDes == false {
 		historyDac.AddHistory(model.History{
 			AccountNumber: account.AccountNumber,
 			Date:          time.Now(),
@@ -119,10 +132,11 @@ func (*PaymentSvc) Transfer(accountNumberStart, accountNumberDes string, amount 
 		Date:          time.Now(),
 		Description:   fmt.Sprintf("Transfer %f Bath success", amount),
 	})
+
 	return dto.TransferResponse{
 		AccountName:    account.AccountName,
 		BalanceOld:     account.Balance,
 		CurrentBalance: balance,
-		TransferAmount: amount,
+		TransferAmount: amountSource,
 	}
 }
